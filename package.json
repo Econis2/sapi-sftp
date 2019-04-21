@@ -1,0 +1,19 @@
+{
+  "name": "sapi-sftp",
+  "version": "1.0.0",
+  "description": "System API for the SFTP Server",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Econis2/sapi-sftp.git"
+  },
+  "author": "Derek Spiner",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Econis2/sapi-sftp/issues"
+  },
+  "homepage": "https://github.com/Econis2/sapi-sftp#readme"
+}
