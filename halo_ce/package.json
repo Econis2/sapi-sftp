@@ -1,0 +1,15 @@
+{
+  "name": "sapi-sftp-halo",
+  "version": "1.0.0",
+  "description": "System API does the needed filesystem orchestration for game management functionality for Halo: Combat Evolved",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Derek Spiner",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.4",
+    "fs-extra": "^7.0.1"
+  }
+}
