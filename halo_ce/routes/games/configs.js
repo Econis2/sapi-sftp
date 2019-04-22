@@ -2,31 +2,45 @@ const router = require('express').Router()
 const fs = require('fs')
 const helper = require('../../helper_modules/helper')
 const config = helper.config
-//const config = JSON.parse(fs.readFileSync('/home/econis/ftp/halo_config.json',{encoding: 'utf-8'}))
-
+const resError = helper.responses.error
+const resSuccess = helper.responses.success
 var userID = ""
-
-function getConfigs(){
-
-
-
-}
-
-function parseConfig(){
-
-}
+var gameName = ""
 
 
 // configs
 router.route('/')
-.get((req, res)=>{
+.all(( req, res, next )=>{
+
+    userID = helper.setUserId( req )
+    gameName = helper.setGameName( req )
+
+    let user = helper.userExist( userID, config )
+    let game = helper.gameExist( gameName, config, userID )
+
+    console.log("User: " + user)
+    console.log("Game: " + game)
+
+    // Continue
+    if( user && game ){ next() }
+    // 404 - Resource Not Found
+    else{ return resError['404']( res ) }
+
+})
+.get(( req, res )=>{
     console.log("GET: All configs")
-    userID = req.originalUrl.split('/')[3]
-    
-    //'Z:\\users\\' + userId + '\\' + 
-    
-    console.log(userId)
-    return res.send("GET: All configs")
+    // Set File Path /users/{ userID }/configs
+    let path = config.paths.users + '/' + userID + '/' + gameName + '/configs'   
+
+    // Read File
+    let temp = fs.readdirSync( path )
+
+    let configs = []
+
+    temp.forEach(( config )=> { configs.push( config.split('.txt')[0] ) })
+
+    return resSuccess['200'](res, configs)
+
 })
 .post((req, res)=>{
     console.log("POST: Add New Type")

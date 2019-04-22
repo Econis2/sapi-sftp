@@ -1,102 +1,70 @@
 const express = require('express')
 const fs = require('fs')
-const { getUsers, config } = require('../helper_modules/helper')
+const helper = require('../helper_modules/helper')
+const config = helper.config
+const resError = helper.responses.error
+const resSuccess = helper.responses.success
 const games = require('./games/games')
 const router = express.Router()
 
 // api/users
 // return array of user GUID
 router.route('/')
+// GET /users
+.get(( req, res )=>{
 
-.get((req,res)=>{
-    let users = getUsers(config)
-    if(users){
-        return res.status(200).send({
-            status: "success",
-            data: users
-        })
-    }
-    else{
-        return res.status(500).send({
-            status: "error",
-            data: {
-                code: 500,
-                msg: "Internal Server Error"
-            }
-        })
-    }
-})
-
-// Create new user
-.post((req,res)=>{
-    // Create Folder with User GUID
-    fs.mkdirSync(config.paths.users + '/' + req.body.id)
-
-    let users = getUsers(config)
-    let user = users.filter( (user) => { return user == req.body.id } )[0]
-
-    if(user){ return res.status(204).send() }
-    else{
-        res.statusCode = 404
-        return {
-            status: "error",
-            data: {
-                code: 500,
-                msg: "Resource not found"
-            }
-        }
-    }
+    let users = helper.getUsers( config )
+    if( users ){ return resSuccess['200']( res, users ) }
+    else{ return resError['500']( res ) }
 
 })
+// POST /users
+.post(( req, res )=>{
 
-// api/users/:id
+    let newId = req.body.id
+
+    if( !helper.userExist( newId ) ){
+        // Create Folder with User GUID
+        fs.mkdirSync( config.paths.users + '/' + newId )
+        
+        let users = helper.getUsers( config )
+        let user = users.filter( (user) => { return user == newId } )[0]
+
+        if( user ){ return resSuccess['204']( res ) }
+        else{ return resError['500']( res ) }
+    
+    }
+    else{ return resError['409']( res ) }
+
+})
+// USERS/:ID
 router.route('/:id')
-// return User
-// - id
-// - games: array[:names]
-.get((req,res)=>{
+// ALL /users/:id
+.all(( req, res, next ) => {
+    if( helper.userExist( req.params.id ) ){ next() }
+    else{ return resError['404']( res ) }
+})
+// GET /users/:id
+.get(( req, res )=>{
     let userBase = config.paths.users + '/' + req.params.id
 
-    let games = fs.readdirSync(userBase)
+    let games = fs.readdirSync( userBase )
 
-    if(games){
-        return res.status(200).send({
-            status: "success",
-            data: games
-        })
+    if( games ){ return resSuccess['200']( res, games ) }
+    else{ return resError['500']( res ) }
 
-    }
-    else{
-        return res.status(500).send({
-            status: "error",
-            data: {
-                code: 500,
-                msg: "Internal Server Error"
-            }
-        })
-    }
 })
-
-.delete((req,res)=>{
+// DELETE /users/:id
+.delete(( req, res )=>{
     let userBase = config.paths.users + '/' + req.params.id
     // Remove User Directory
-    fs.rmdirSync(userBase)
+    fs.rmdirSync( userBase )
 
-    let users = getUsers(config)
-    let user = users.filter( (user) => { return user == req.body.id } )[0]
+    let users = helepr.getUsers( config )
+    let user = users.filter( ( user ) => { return user == req.body.id } )[0]
 
-    if(!user){
-        return res.status(204).send()
-    }
-    else{
-        return res.status(500).send({
-            status: "error",
-            data: {
-                code: 500,
-                msg: "Internal Server Error"
-            }
-        })
-    }
+    if( !user ){ return resSuccess['204']( res ) }
+    else{ return resError['500']( res ) }
 
 })
 

@@ -17,7 +17,7 @@ router.route('/')
     userID = helper.setUserId( req )
 
     // Check if User Exists
-    if(helper.userExist( req, config )){ next() }
+    if(helper.userExist( userID, config )){ next() }
     // 404 - Resource Not Found
     else{ return resError['404']( res ) }
     
@@ -64,8 +64,8 @@ router.route('/:name')
 
     userID = helper.setUserId( req )
 
-    let user = helper.userExist( req, config )
-    let game = helper.gameExist( req, config, userID )
+    let user = helper.userExist( userID, config )
+    let game = helper.gameExist( req.params.name, config, userID )
 
     // Continue
     if( user && game ){ next() }

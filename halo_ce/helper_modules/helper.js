@@ -67,16 +67,19 @@ module.exports = {
         return req.originalUrl.split('/')[3]
     },
 
+    setGameName: function( req ){
+
+        return req.originalUrl.split('/')[5]
+    },
     // User Functions
     getUsers: function(config){
         return fs.readdirSync( config.paths.users )
     },
 
-    userExist: function(req, config){
+    userExist: function(id, config){
         
-        userID = req.originalUrl.split('/')[3]
 
-        let user = fs.readdirSync(config.paths.users).filter((user) => { return user == userID})
+        let user = fs.readdirSync(config.paths.users).filter((user) => { return user == id})
         
         if(user.length != 0){
             return true
@@ -87,8 +90,7 @@ module.exports = {
     },
 
     // Game Functions
-    gameExist: function(req, config, userID){
-        let gameName = req.params.name
+    gameExist: function(gameName, config, userID){
 
         // see if game folder exists
         let game = this.getGames(config, userID).filter((game) => { return game == gameName })
