@@ -1,11 +1,14 @@
 const router = require('express').Router()
 const fs = require('fs')
-const config = JSON.parse(fs.readFileSync('/home/econis/ftp/halo_config.json',{encoding: 'utf-8'}))
+const helper = require('../../helper_modules/helper')
+const config = helper.config
+//const config = JSON.parse(fs.readFileSync('/home/econis/ftp/halo_config.json',{encoding: 'utf-8'}))
 
+var userID = ""
 
 function getConfigs(){
 
-    //fs.readdirSync('Z:\\')
+
 
 }
 
@@ -18,9 +21,9 @@ function parseConfig(){
 router.route('/')
 .get((req, res)=>{
     console.log("GET: All configs")
-    let userId = req.originalUrl.split('/')[3]
+    userID = req.originalUrl.split('/')[3]
     
-    'Z:\\users\\' + userId + '\\' + 
+    //'Z:\\users\\' + userId + '\\' + 
     
     console.log(userId)
     return res.send("GET: All configs")

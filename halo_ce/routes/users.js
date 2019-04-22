@@ -1,17 +1,15 @@
 const express = require('express')
 const fs = require('fs')
+const { getUsers, config } = require('../helper_modules/helper')
 const games = require('./games/games')
 const router = express.Router()
-const config = JSON.parse(fs.readFileSync('/home/econis/ftp/halo_config.json',{encoding: 'utf-8'}))
-
-function getUsers(){ return fs.readdirSync( config.paths.users ) }
 
 // api/users
 // return array of user GUID
 router.route('/')
 
 .get((req,res)=>{
-    let users = getUsers()
+    let users = getUsers(config)
     if(users){
         return res.status(200).send({
             status: "success",
@@ -34,7 +32,7 @@ router.route('/')
     // Create Folder with User GUID
     fs.mkdirSync(config.paths.users + '/' + req.body.id)
 
-    let users = getUsers()
+    let users = getUsers(config)
     let user = users.filter( (user) => { return user == req.body.id } )[0]
 
     if(user){ return res.status(204).send() }
@@ -84,7 +82,7 @@ router.route('/:id')
     // Remove User Directory
     fs.rmdirSync(userBase)
 
-    let users = getUsers()
+    let users = getUsers(config)
     let user = users.filter( (user) => { return user == req.body.id } )[0]
 
     if(!user){

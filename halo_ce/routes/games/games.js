@@ -1,162 +1,91 @@
 const express = require('express')
+const fs = require('fs-extra')
 const types = require('./types')
 const configs = require('./configs')
+const helper = require('../../helper_modules/helper')
+const resError = helper.responses.error
+const resSuccess = helper.responses.success
+const config = helper.config
 const router = express.Router()
-const fs = require('fs-extra')
-const config = JSON.parse(fs.readFileSync('/home/econis/ftp/halo_config.json',{encoding: 'utf-8'}))
-var userID = ""
 
-function getGames(){
-    return fs.readdirSync(config.paths.users + '/' + userID)
-}
+var userID = ""
 
 //  games/
 router.route('/')
-.all((req,res,next)=>{
-    // Parses the User ID
-    userID = req.originalUrl.split('/')[3]
+.all(( req, res, next )=>{
 
-    // see if user exists
-    let user = fs.readdirSync(config.paths.users).filter((user) => { return user == userID})
-    if(user){
-        next()
-    }
+    userID = helper.setUserId( req )
+
+    // Check if User Exists
+    if(helper.userExist( req, config )){ next() }
     // 404 - Resource Not Found
-    // cannot find User
-    else{
-        res.status(404).send({
-            status: 'error',
-            data: {
-                code: 404,
-                msg: "Resource Not Found [USER]"
-            }
-        })
-    }
+    else{ return resError['404']( res ) }
     
 })
 
-.get((req,res)=>{
-    let games = getGames()
+.get(( req,res )=>{
+    let games = helper.getGames( config, userID )
 
-    if(games){
-        return res.status(200).send({
-            status: "success",
-            data: games
-        })
-    }
-    else{
-        return res.status(500).send({
-            status: 500,
-            data: {
-                code: 500,
-                msg: "Internal Server Error"
-            }
-        })
-    }
+    if( games ){ return resSuccess['200']( res, games ) }
+    else{ return resError['500']( res ) }
 })
 
-.post((req,res)=>{
-    console.log("POST: Add New game")
+.post(( req, res )=>{
+    // Check if game already exists
+    let games = helper.getGames( config, userID ).filter(( game )=>{ return game == req.body.name })
 
-    let gamePath = config.paths.users + '/' + userID + '/' + req.body.name
-    let package = config.paths.packages + '/' + req.body.name
-    // Make the New (Game) Folder in User Folder 
-    fs.mkdirSync(gamePath)
-
-    //Copy Game Template to New Game Folder Directory
-    fs.copySync(package, gamePath)
-
-    // Check that the games folder was created
-    let games = getGames()
-    let game = games.filter((game)=> { return game == req.body.name } )[0]
-
-    if(game){
-        return res.status(204).send()
+    if( games.length == 0 ){
+        let gamePath = config.paths.users + '/' + userID + '/' + req.body.name
+        let package = config.paths.packages + '/' + req.body.name
+    
+        // Make the New (Game) Folder in User Folder 
+        fs.mkdirSync( gamePath )
+    
+        //Copy Game Template to New Game Folder Directory
+        fs.copySync( package, gamePath )
+    
+        // Check that the games folder was created
+        let games = helper.getGames( config, userID )
+        let game = games.filter(( game )=> { return game == req.body.name })[0]
+    
+        // 204 - New Game Created
+        if( game ){ return resSuccess['204']( res ) }
+        // 500 - Internal Server Error
+        else{ return resError['500']( res ) }
     }
-    // 500 - Internal Server Error
-    else{
-        res.status(500).send({
-            status: 'error',
-            data: {
-                code: 500,
-                msg: "Internal Server Error"
-            }
-        })
-    }
+    // 409 - Resource Exist
+    else{ return resError['409']( res ) }
 
 })
 
 //  games/:name
 router.route('/:name')
-.all((req,res,next)=>{
-    userID = req.originalUrl.split('/')[3]
+.all(( req, res, next )=>{
 
-    // see if user exists
-    let user = fs.readdirSync(config.paths.users).filter((user) => { return user == userID})
-    if(user){
-        next()
-    }
+    userID = helper.setUserId( req )
+
+    let user = helper.userExist( req, config )
+    let game = helper.gameExist( req, config, userID )
+
+    // Continue
+    if( user && game ){ next() }
     // 404 - Resource Not Found
-    // cannot find User
-    else{
-        res.status(404).send({
-            status: 'error',
-            data: {
-                code: 404,
-                msg: "Resource Not Found [USER]"
-            }
-        })
-    }
+    else{ return resError['404']( res ) }
 })
-.get((req,res)=>{
-
-    let gamePaths = config.gamePaths[req.params.name]
-    let gameFolders = Object.keys(gamePaths)
-    let basePath = config.paths.users + '/' + userID + '/' + req.params.name
-    let data = {}
-
-    gameFolders.forEach((folder) =>{ 
-        
-        let tmp = []
-        let contents = fs.readdirSync(basePath + '/' + gamePaths[folder])
-        
-        if(content){
-            contents.forEach((file)=>{
-                tmp.push(file.split('.')[0])
-            })
-        }
-
-        data[folder] =  tmp
+.get(( req,res )=>{
     
-    })
-
-    return res.status(200).send({
-        status: "success",
-        data: data
-    })
-
+    let data = helper.getGameDetails( req.params.name, config, userID )
+    return resSuccess['200']( res, data )
 })
 
-.delete((req,res)=>{
+.delete(( req, res )=>{
     
-    fs.removeSync(config.paths.users + '/' + userID + '/' + req.params.name)
+    fs.removeSync( helper.config.paths.users + '/' + userID + '/' + req.params.name )
 
-    let game = getGames().filter((game) =>{
-        return game == req.params.name
-    })
+    let game = helper.getGames( config, userID ).filter(( game ) =>{ return game == req.params.name })
 
-    if(game.length == 0){
-        return res.status(204).send()
-    }
-    else{
-        return res.status(500).send({
-            status: "error",
-            data: {
-                code: 500,
-                msg: "Internal Server Error"
-            }
-        })
-    }
+    if( game.length == 0 ){ return resSuccess['204']( res )}
+    else{ return resError['500']( res ) }
 })
 
 router.use('/:id/configs', configs)
